@@ -35,7 +35,7 @@ def update_reconnect_time(session):
     event = session.query(ConnectionEvent).order_by(ConnectionEvent.disconnect_time.desc()).first()
 
     if event:  # if a record was found
-        event.reconnect_time = datetime.datetime.utcnow()
+        event.reconnect_time = datetime.datetime.now()
         duration = event.reconnect_time - event.disconnect_time # subtract the reconnect time from the disconnect time to calculate the duration of the disconnection
         event.duration = str(duration)
         session.commit()
@@ -46,6 +46,14 @@ def log_event(event_msg):
     with open(LOG_FILE, 'a') as log:
         log.write(f"{timestamp} - {event_msg}\n")
 
+def delete_stuck_record(session):
+    # If the application crashes check if the last record is stuck with a null reconnect time
+    # A power outage or a nuclear bomb is not an ISP issue
+    event = session.query(ConnectionEvent).order_by(ConnectionEvent.disconnect_time.desc()).first()
+    if event.reconnect_time is None:
+        session.delete(event)
+        session.commit()
+
 def main():
     Session = setup_session()
     last_status = has_internet()
@@ -53,7 +61,10 @@ def main():
     while True: # This will loop continuously until the program is terminated or an unhandled exception occurs
         current_status = has_internet()        
         
-        with Session() as session:
+        with Session() as session:          
+            if last_status == current_status:
+                delete_stuck_record(session)
+            
             if current_status != last_status: # If there was a change in the connection status
                 if current_status:
 
