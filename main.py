@@ -40,7 +40,6 @@ def update_reconnect_time(session):
         event.duration = str(duration)
         session.commit()
     
-
 def log_event(event_msg):
     # log disconnect/reconnect with timetstamps to log file
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -51,27 +50,22 @@ def main():
     Session = setup_session()
     last_status = has_internet()
 
-    # testing insert to database
-    with Session() as session:
-        create_disconnect_rec(session)
-        update_reconnect_time(session)
-
-    # while True: # This will loop continuously until the program is terminated or an unhandled exception occurs
-    #     current_status = has_internet()        
+    while True: # This will loop continuously until the program is terminated or an unhandled exception occurs
+        current_status = has_internet()        
         
-    #     with Session() as session:
-    #         if current_status != last_status: # If there was a change in the connection status
-    #             if current_status:
+        with Session() as session:
+            if current_status != last_status: # If there was a change in the connection status
+                if current_status:
 
-    #                 log_event("Internet reconnected") # Log event to log file
-    #                 create_disconnect_rec(session) # Create new connection_events record 
-    #             else:
+                    log_event("Internet reconnected") # Log event to log file
+                    create_disconnect_rec(session) # Create new connection_events record 
+                else:
 
-    #                 log_event("Internet disconnected")
-    #                 update_reconnect_time(session)
+                    log_event("Internet disconnected")
+                    update_reconnect_time(session)
         
-    #     last_status = current_status
-    #     time.sleep(CHECK_INTERVAL)
+        last_status = current_status
+        time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
     main()
