@@ -13,8 +13,7 @@ TEST_URL = "https://www.google.com"
 def setup_session():
     DATABASE_URL = "sqlite:///Database/connection_monitor.db"
     engine = create_engine(DATABASE_URL)
-    Session = sessionmaker(bind=engine)  
-    return Session
+    return sessionmaker(bind=engine)
 
 def has_internet(): 
     # Check if we can make a successful request to google
@@ -49,31 +48,37 @@ def log_event(event_msg):
 def delete_stuck_record(session):
     # If the application crashes check if the last record is stuck with a null reconnect time
     # A power outage or a nuclear bomb is not an ISP issue
-    event = session.query(ConnectionEvent).order_by(ConnectionEvent.disconnect_time.desc()).first()
-    if event.reconnect_time is None:
-        session.delete(event)
-        session.commit()
+    while True: # Look for multiple stuck records
+        event = session.query(ConnectionEvent).order_by(ConnectionEvent.disconnect_time.desc()).first()
+        if event.reconnect_time is None:
+            session.delete(event)
+            session.commit()
 
 def main():
     Session = setup_session()
+    session = Session()
     last_status = has_internet()
 
+    # create_disconnect_rec(session) # Create new connection_events record
+    # create_disconnect_rec(session) # Create new connection_events record 
+    # create_disconnect_rec(session) # Create new connection_events record 
+    # create_disconnect_rec(session) # Create new connection_events record  
+  
     while True: # This will loop continuously until the program is terminated or an unhandled exception occurs
-        current_status = has_internet()        
+        current_status = has_internet()
         
-        with Session() as session:          
-            if last_status == current_status:
-                delete_stuck_record(session)
-            
-            if current_status != last_status: # If there was a change in the connection status
-                if current_status:
+        if last_status == current_status:
+            delete_stuck_record(session)
+        
+        if current_status != last_status: # If there was a change in the connection status
+            if current_status:
 
-                    log_event("Internet reconnected") # Log event to log file
-                    create_disconnect_rec(session) # Create new connection_events record 
-                else:
+                log_event("Internet reconnected") # Log event to log file
+                create_disconnect_rec(session) # Create new connection_events record 
+            else:
 
-                    log_event("Internet disconnected")
-                    update_reconnect_time(session)
+                log_event("Internet disconnected")
+                update_reconnect_time(session)
         
         last_status = current_status
         time.sleep(CHECK_INTERVAL)
