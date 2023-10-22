@@ -58,11 +58,6 @@ def main():
     Session = setup_session()
     session = Session()
     last_status = has_internet()
-
-    # create_disconnect_rec(session) # Create new connection_events record
-    # create_disconnect_rec(session) # Create new connection_events record 
-    # create_disconnect_rec(session) # Create new connection_events record 
-    # create_disconnect_rec(session) # Create new connection_events record  
   
     while True: # This will loop continuously until the program is terminated or an unhandled exception occurs
         current_status = has_internet()
